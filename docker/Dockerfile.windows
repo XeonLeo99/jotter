@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-#
 # Reproducible Windows build, from Linux, in a container.
 #
 # `cargo-xwin` fetches the MSVC CRT and Windows SDK headers and drives clang-cl
