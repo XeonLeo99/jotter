@@ -2,7 +2,7 @@ use tauri::{AppHandle, Runtime, State, WebviewWindow};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 
 use crate::error::{Error, Result};
-use crate::model::{Card, Item, Workspace};
+use crate::model::{Card, Item, Skill, Workspace};
 use crate::store::Store;
 use crate::window::{self, Ui};
 
@@ -10,6 +10,9 @@ use crate::window::{self, Ui};
 /// a runaway paste cannot bloat the workspace document.
 const MAX_ITEM_LEN: usize = 10_000;
 const MAX_TITLE_LEN: usize = 60;
+/// Skills hold whole prompts and specs (server info, conventions), so they get
+/// more room than a single note — but are still bounded at the IPC edge.
+const MAX_SKILL_LEN: usize = 50_000;
 /// Upper bound on a single export/copy payload, as a cheap abuse guard on the
 /// IPC boundary.
 const MAX_TEXT_LEN: usize = 1024 * 1024;
@@ -164,6 +167,57 @@ pub fn clear_done(store: State<'_, Store>, card_id: String) -> Result<usize> {
             card.touch();
         }
         Ok(removed)
+    })
+}
+
+// --------------------------------------------------------------------- skills
+
+#[tauri::command]
+pub fn create_skill(store: State<'_, Store>, name: String, content: String) -> Result<Skill> {
+    let name = clean(&name, MAX_TITLE_LEN);
+    if name.is_empty() {
+        return Err(Error::Invalid("skill name cannot be empty".into()));
+    }
+    let content = clean(&content, MAX_SKILL_LEN);
+    store.write(|ws| {
+        let skill = Skill::new(name, content);
+        ws.skills.push(skill.clone());
+        Ok(skill)
+    })
+}
+
+#[tauri::command]
+pub fn update_skill(
+    store: State<'_, Store>,
+    skill_id: String,
+    name: String,
+    content: String,
+) -> Result<()> {
+    let name = clean(&name, MAX_TITLE_LEN);
+    if name.is_empty() {
+        return Err(Error::Invalid("skill name cannot be empty".into()));
+    }
+    let content = clean(&content, MAX_SKILL_LEN);
+    store.write(|ws| {
+        let skill = ws
+            .skill_mut(&skill_id)
+            .ok_or_else(|| Error::not_found("skill", &skill_id))?;
+        skill.name = name;
+        skill.content = content;
+        skill.touch();
+        Ok(())
+    })
+}
+
+#[tauri::command]
+pub fn delete_skill(store: State<'_, Store>, skill_id: String) -> Result<()> {
+    store.write(|ws| {
+        let before = ws.skills.len();
+        ws.skills.retain(|s| s.id != skill_id);
+        if ws.skills.len() == before {
+            return Err(Error::not_found("skill", &skill_id));
+        }
+        Ok(())
     })
 }
 

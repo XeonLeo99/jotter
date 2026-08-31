@@ -6,7 +6,7 @@
  */
 
 import './app.css';
-import type { Card, Item, Workspace } from './lib/types';
+import type { Card, Item, Skill, Workspace } from './lib/types';
 
 const seed = (title: string, accent: number, lines: Array<[string, boolean]>): Card => ({
   id: `card-${accent}`,
@@ -22,11 +22,35 @@ const seed = (title: string, accent: number, lines: Array<[string, boolean]>): C
   })),
 });
 
+const seedSkill = (name: string, content: string): Skill => ({
+  id: `skill-${name}`,
+  name,
+  content,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+});
+
 const fixture: Workspace = {
   version: 1,
   activeCardId: 'card-0',
   pinned: false,
   ballPosition: null,
+  skills: [
+    seedSkill(
+      'xxx项目生成部署',
+      [
+        '服务器：',
+        '- IP: 1.2.3.4',
+        '- 账号: deploy',
+        '- 密码: ************',
+        '',
+        '部署规范：',
+        '1. 先构建后推送',
+        '2. 灰度验证再全量',
+      ].join('\n'),
+    ),
+    seedSkill('代码评审规范', '统一使用 ESLint 规则，提交前跑 lint 与单测。'),
+  ],
   cards: [
     seed('首页改版', 0, [
       ['主按钮圆角 8px，卡片是 12px，视觉上不成体系', false],
@@ -72,6 +96,20 @@ function handle(cmd: string, args: Record<string, unknown>): unknown {
       if (active) active.items = active.items.filter((i) => !i.done);
       return before - (active?.items.length ?? 0);
     }
+    // Skills resolve through the store's own mirror, so these only return what
+    // the Rust command would — they do not mutate the fixture, which keeps the
+    // store the single writer in the browser (the real Rust store is separate).
+    case 'create_skill':
+      return {
+        id: `skill-new-${nextId++}`,
+        name: args.name as string,
+        content: args.content as string,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      } satisfies Skill;
+    case 'update_skill':
+    case 'delete_skill':
+      return undefined;
     // Window and clipboard commands are no-ops in the browser.
     default:
       return undefined;

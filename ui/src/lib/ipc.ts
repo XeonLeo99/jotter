@@ -3,7 +3,7 @@
  * place. */
 
 import { invoke } from '@tauri-apps/api/core';
-import type { Card, Item, Workspace } from './types';
+import type { Card, Item, Skill, Workspace } from './types';
 
 export const loadWorkspace = () => invoke<Workspace>('load_workspace');
 
@@ -28,6 +28,14 @@ export const deleteItem = (cardId: string, itemId: string) =>
   invoke<void>('delete_item', { cardId, itemId });
 
 export const clearDone = (cardId: string) => invoke<number>('clear_done', { cardId });
+
+export const createSkill = (name: string, content: string) =>
+  invoke<Skill>('create_skill', { name, content });
+
+export const updateSkill = (skillId: string, name: string, content: string) =>
+  invoke<void>('update_skill', { skillId, name, content });
+
+export const deleteSkill = (skillId: string) => invoke<void>('delete_skill', { skillId });
 
 export const copyText = (text: string) => invoke<void>('copy_text', { text });
 

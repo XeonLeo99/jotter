@@ -11,10 +11,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { listen } from '@tauri-apps/api/event';
+  import BottomNav from './components/BottomNav.svelte';
   import CardTabs from './components/CardTabs.svelte';
   import Composer from './components/Composer.svelte';
   import Icon from './components/Icon.svelte';
   import ItemList from './components/ItemList.svelte';
+  import Skills from './components/Skills.svelte';
   import Toast from './components/Toast.svelte';
   import Toolbar from './components/Toolbar.svelte';
   import { pressToDrag } from './lib/drag';
@@ -22,6 +24,9 @@
   import { workspace } from './lib/store.svelte';
 
   let menuOpen = $state(false);
+  /** Which side of the notebook the foot navigation is showing. Session-only:
+   * it always starts on the notepad. */
+  let tab = $state<'notes' | 'skills'>('notes');
 
   onMount(() => {
     void workspace.load();
@@ -171,10 +176,16 @@
         </div>
       </header>
 
-      <CardTabs />
-      <div class="paper"><ItemList /></div>
-      <Composer />
-      <Toolbar />
+      {#if tab === 'notes'}
+        <CardTabs />
+        <div class="paper"><ItemList /></div>
+        <Composer />
+        <Toolbar />
+      {:else}
+        <Skills />
+      {/if}
+
+      <BottomNav bind:active={tab} />
     </div>
 
     <Toast />

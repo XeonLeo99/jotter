@@ -17,6 +17,14 @@ export interface Card {
   updatedAt: number;
 }
 
+export interface Skill {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface Point {
   x: number;
   y: number;
@@ -26,6 +34,7 @@ export interface Workspace {
   version: number;
   cards: Card[];
   activeCardId: string | null;
+  skills: Skill[];
   pinned: boolean;
   ballPosition: Point | null;
 }

@@ -7,7 +7,7 @@
  */
 
 import * as ipc from './ipc';
-import type { Card, Item } from './types';
+import type { Card, Item, Skill } from './types';
 
 export const ACCENTS = 6;
 
@@ -47,6 +47,7 @@ async function guard<T>(action: () => Promise<T>, failure: string): Promise<Outc
 
 class WorkspaceState {
   cards = $state<Card[]>([]);
+  skills = $state<Skill[]>([]);
   activeId = $state<string | null>(null);
   pinned = $state(false);
   ready = $state(false);
@@ -63,6 +64,7 @@ class WorkspaceState {
     const res = await guard(() => ipc.loadWorkspace(), '读取数据失败');
     if (!res.ok) return;
     this.cards = res.value.cards;
+    this.skills = res.value.skills;
     this.activeId = res.value.activeCardId;
     this.pinned = res.value.pinned;
     this.ready = true;
@@ -156,6 +158,38 @@ class WorkspaceState {
     if (!res.ok) return;
     card.items = card.items.filter((i) => !i.done);
     toasts.show(res.value > 0 ? `已清理 ${res.value} 条` : '没有已完成的条目');
+  }
+
+  // ------------------------------------------------------------------ skills
+
+  /** Adds a skill; resolves to whether it landed, so the editor can keep the
+   * draft on screen if the write failed. */
+  async addSkill(name: string, content: string): Promise<boolean> {
+    const value = name.trim();
+    if (!value) return false;
+    const res = await guard(() => ipc.createSkill(value, content), '新建技能失败');
+    if (res.ok) this.skills.push(res.value);
+    return res.ok;
+  }
+
+  async updateSkill(id: string, name: string, content: string): Promise<boolean> {
+    const skill = this.skills.find((s) => s.id === id);
+    const nextName = name.trim();
+    if (!skill || !nextName) return false;
+    const previous = { name: skill.name, content: skill.content };
+    skill.name = nextName;
+    skill.content = content;
+    const res = await guard(() => ipc.updateSkill(id, nextName, content), '保存技能失败');
+    if (!res.ok) {
+      skill.name = previous.name;
+      skill.content = previous.content;
+    }
+    return res.ok;
+  }
+
+  async removeSkill(id: string) {
+    const res = await guard(() => ipc.deleteSkill(id), '删除技能失败');
+    if (res.ok) this.skills = this.skills.filter((s) => s.id !== id);
   }
 
   // ------------------------------------------------------------------ window

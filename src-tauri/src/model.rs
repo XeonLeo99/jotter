@@ -80,6 +80,37 @@ impl Card {
     }
 }
 
+/// A reusable prompt / context snippet — e.g. "xxx项目生成部署" holding the
+/// server address, credentials and conventions to paste into a fresh session.
+/// Text only, like the rest of the workspace: skills are for restoring context,
+/// not for prose.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Skill {
+    pub id: String,
+    pub name: String,
+    pub content: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+impl Skill {
+    pub fn new(name: String, content: String) -> Self {
+        let ts = now_ms();
+        Self {
+            id: new_id(),
+            name,
+            content,
+            created_at: ts,
+            updated_at: ts,
+        }
+    }
+
+    pub fn touch(&mut self) {
+        self.updated_at = now_ms();
+    }
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Point {
     pub x: i32,
@@ -95,6 +126,10 @@ pub struct Workspace {
     pub version: u32,
     pub cards: Vec<Card>,
     pub active_card_id: Option<String>,
+    /// Reusable prompt / context snippets, managed from the notebook's skills
+    /// tab. Defaulted so a pre-skills document loads untouched.
+    #[serde(default)]
+    pub skills: Vec<Skill>,
     /// When pinned, the panel stays open after losing focus.
     #[serde(default)]
     pub pinned: bool,
@@ -111,6 +146,7 @@ impl Default for Workspace {
             version: SCHEMA_VERSION,
             active_card_id: Some(first.id.clone()),
             cards: vec![first],
+            skills: Vec::new(),
             pinned: false,
             ball_position: None,
         }
@@ -120,6 +156,10 @@ impl Default for Workspace {
 impl Workspace {
     pub fn card_mut(&mut self, id: &str) -> Option<&mut Card> {
         self.cards.iter_mut().find(|c| c.id == id)
+    }
+
+    pub fn skill_mut(&mut self, id: &str) -> Option<&mut Skill> {
+        self.skills.iter_mut().find(|s| s.id == id)
     }
 
     /// Guarantees the invariants the UI relies on: at least one card exists and
