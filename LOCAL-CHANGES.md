@@ -27,14 +27,14 @@ npx.cmd --yes pnpm@10.12.1 dev
 浏览器预览：`http://127.0.0.1:1420/preview.html?state=ball`；去掉查询参数预览笔记面板。
 预览使用模拟数据，不具备真实桌面置顶、拖动和磁盘保存能力。
 
-生成 Windows EXE 推荐使用项目已有 GitHub Actions：
+推送到 `main` 会自动通过 GitHub Actions 检查并构建 Windows EXE，也可手动触发：
 
 1. 打开 [本仓库 CI 工作流](https://github.com/XeonLeo99/jotter/actions/workflows/ci.yml)。
 2. 如需启用 Actions，先启用工作流，再点击 `Run workflow`，选择 `main`。
 3. 下载 `jotter-windows` 中的 `jotter.exe`（便携版）或 `*-setup.exe`（安装版）。
 4. 也可下载容器构建任务的 `jotter-windows-portable`。
 
-手动运行工作流不需要创建版本标签，也不会自动发布 Release；本机不用安装 MSVC、Rust 或 Docker。
+推送 `main` 或手动运行工作流都不需要创建版本标签，也不会自动发布 Release；本机不用安装 MSVC、Rust 或 Docker。
 现有工作流会执行检查并构建，GitHub Actions 的可用额度取决于账号与仓库设置。
 
 原生 Windows 本地构建需要 Rust MSVC 工具链、Microsoft C++ Build Tools 和 Windows SDK。

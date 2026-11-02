@@ -6,10 +6,8 @@ on:
     tags: ['v*']
   pull_request:
     branches: [main]
-  # The installer job only ever runs for a tag, which makes it the one job that
-  # cannot be exercised without minting a public tag. This lets it be run by hand
-  # against a branch (it then builds and inspects the exe, and skips publishing —
-  # there is no release to attach to).
+  # Build downloadable executables on main pushes or on demand without
+  # publishing a release. Only a version tag publishes release assets.
   workflow_dispatch:
 
 concurrency:
@@ -76,7 +74,7 @@ jobs:
   installer:
     name: Windows installer
     needs: [frontend, rust]
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: windows-latest
     # Only to attach the built files to the tag's release; nothing else here
     # writes to the repository.
