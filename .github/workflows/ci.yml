@@ -143,7 +143,7 @@ jobs:
           # `jotter.exe` is a fine build output and a poor thing to download.
           $portable = "Jotter-$tag-portable.exe"
           Copy-Item src-tauri/target/release/jotter.exe $portable
-          gh release create $tag --verify-tag --title "Jotter $tag" `
+          gh release create $tag --verify-tag --title "Jotter $tag — GUGUGAGA 宠物版" `
             --notes-file .github/release-notes.md $setupPath $portable
 
   container-build:

@@ -1,6 +1,8 @@
 # 本地宠物版本
 
-基于 Jotter v0.2.0（`901e1f8`）。悬浮小猫已替换为用户提供的 GUGUGAGA 素材。
+GUGUGAGA 宠物版 v0.2.1，基于 Jotter v0.2.0（`901e1f8`）。悬浮小猫已替换为用户提供的 GUGUGAGA 素材。
+
+成品下载：[最新 Release](https://github.com/XeonLeo99/jotter/releases/latest)，选择 `*-portable.exe` 免安装运行。
 
 ## 素材与交互
 
@@ -36,6 +38,17 @@ npx.cmd --yes pnpm@10.12.1 dev
 
 推送 `main` 或手动运行工作流都不需要创建版本标签，也不会自动发布 Release；本机不用安装 MSVC、Rust 或 Docker。
 现有工作流会执行检查并构建，GitHub Actions 的可用额度取决于账号与仓库设置。
+
+## 发布 Release
+
+更新 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 和 `src-tauri/Cargo.lock` 中的应用版本，并更新 `.github/release-notes.md`。提交后推送相同版本的标签，例如：
+
+```powershell
+git tag v0.2.1
+git push origin main v0.2.1
+```
+
+CI 检查和 Windows EXE 启动验收通过后，会自动创建 GitHub Release，上传便携 EXE 和安装包。已发布的版本使用新的版本号发布后续修改。
 
 原生 Windows 本地构建需要 Rust MSVC 工具链、Microsoft C++ Build Tools 和 Windows SDK。
 项目另有 `make windows` 容器交叉编译方案，但需要已经能运行 Linux 容器的 Docker 环境。

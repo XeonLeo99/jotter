@@ -1,6 +1,8 @@
 > **GUGUGAGA 宠物版**：本 fork 将原版小猫替换为提供的 Codex pet 动画素材，保留点击展开、拖动、待办角标和自动保存。
 >
-> **下载改版 EXE**：推送 `main` 后自动构建。打开 [本仓库 GitHub Actions](https://github.com/XeonLeo99/jotter/actions/workflows/ci.yml)，进入成功的构建记录，在 Artifacts 下载 `jotter-windows`（便携 EXE 和安装包）或 `jotter-windows-portable`（便携 EXE）。也可点击 `Run workflow` 重新构建，本机无需 MSVC。
+> **下载改版 EXE**：打开 [最新 Release](https://github.com/XeonLeo99/jotter/releases/latest)，在 Assets 下载 `Jotter-v0.2.1-portable.exe`，免安装直接运行；也提供安装包。本机无需 MSVC。
+>
+> 推送 `main` 会自动构建测试版，在 [GitHub Actions](https://github.com/XeonLeo99/jotter/actions/workflows/ci.yml) 下载构建产物；推送 `v*` 标签会在检查通过后自动创建 Release。
 >
 > 改动与预览方式见 [宠物版说明](LOCAL-CHANGES.md)。下文保留原项目说明；原版小猫的外观、文件体积和性能数字仅描述原版。
 
@@ -12,7 +14,7 @@
 
 A little cat hugging a notebook · one-click copy · one-click export · multi-card switching · global hotkey · single-file exe
 
-[**Download the latest release**](https://github.com/ztcools/jotter/releases/latest) · Windows 10 20H2+ · Free & open source (MIT)
+[**Download the pet edition**](https://github.com/XeonLeo99/jotter/releases/latest) · [Original project](https://github.com/ztcools/jotter) · Free & open source (MIT)
 
 </div>
 
@@ -20,12 +22,12 @@ A little cat hugging a notebook · one-click copy · one-click export · multi-c
 
 ## Installation
 
-Grab one from [Releases](https://github.com/ztcools/jotter/releases/latest) — both files are identical in content:
+Grab one from [Releases](https://github.com/XeonLeo99/jotter/releases/latest) — both files are identical in content:
 
 | File                          | Best for                                                                 |
 | ----------------------------- | ------------------------------------------------------------------------ |
 | `Jotter_<version>_x64-setup.exe` | If you want a Start-menu shortcut and an uninstall entry. Installs to the current user's directory, **no administrator rights needed** |
-| `Jotter-<version>-portable.exe`  | If you just want to double-click and go. Install-free single file at 3.7 MB — works from a USB stick too                       |
+| `Jotter-<version>-portable.exe`  | Install-free single file. Download and run directly. |
 
 Once installed, the little cat appears at the bottom-right of your desktop: click it to open the notebook, type a line and press Enter to record it, and press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> to summon it at any time. Drag it wherever you like — it remembers its position across restarts.
 
