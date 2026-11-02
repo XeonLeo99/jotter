@@ -1,3 +1,9 @@
+> **GUGUGAGA 宠物版**：本 fork 将原版小猫替换为提供的 Codex pet 动画素材，保留点击展开、拖动、待办角标和自动保存。
+>
+> **下载改版 EXE**：打开 [本仓库 GitHub Actions](https://github.com/XeonLeo99/jotter/actions/workflows/ci.yml)，进入成功的构建记录，在 Artifacts 下载 `jotter-windows`（便携 EXE 和安装包）或 `jotter-windows-portable`（便携 EXE）。需要重新构建时点击 `Run workflow`，本机无需 MSVC。
+>
+> 改动与预览方式见 [宠物版说明](LOCAL-CHANGES.md)。下文保留原项目说明；原版小猫的外观、文件体积和性能数字仅描述原版。
+
 <div align="center">
 
 # Jotter

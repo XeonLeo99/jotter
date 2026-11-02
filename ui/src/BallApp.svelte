@@ -13,20 +13,18 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { listen } from '@tauri-apps/api/event';
-  import Cat from './components/Cat.svelte';
+  import Pet from './components/Pet.svelte';
   import { pressToDrag } from './lib/drag';
   import * as ipc from './lib/ipc';
 
   let pressed = $state(false);
   let panelOpen = $state(false);
   let badge = $state(0);
-  /** True while the cat is playing one burst of movement. Nothing in this window
-   * animates continuously: on a transparent always-on-top window a running
-   * animation costs a quarter to a half of a CPU core however small it is, and a
-   * still one costs about a hundredth. See the animation note in `Cat.svelte`. */
+  /** True during a short pet animation. Keep the resident window still between
+   * bursts to avoid continually recompositing the transparent desktop layer. */
   let stir = $state(false);
 
-  /** Longer than the longest keyframe in `Cat.svelte`, so a burst is never cut
+  /** Longer than the longest keyframe in `Pet.svelte`, so a burst is never cut
    * off part-way through a movement. */
   const BURST_MS = 1500;
   /** Gap between unprompted bursts, jittered so the cat does not tick like a
@@ -145,7 +143,7 @@
     aria-label={label}
     aria-pressed={panelOpen}
   >
-    <Cat {pressed} {stir} open={panelOpen} />
+    <Pet {pressed} {stir} open={panelOpen} />
     {#if badge > 0}
       <span class="badge">{badge > 99 ? '99+' : badge}</span>
     {/if}

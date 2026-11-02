@@ -129,6 +129,12 @@ Object.defineProperty(window, '__TAURI_INTERNALS__', {
   },
 });
 
+// The event API also calls this hook when a component unmounts (including
+// Vite hot reload). No native listeners exist in the browser preview.
+Object.defineProperty(window, '__TAURI_EVENT_PLUGIN_INTERNALS__', {
+  value: { unregisterListener: () => {} },
+});
+
 const params = new URLSearchParams(location.search);
 // The app ships two windows, so the harness previews one at a time:
 // `?state=ball` is the mascot, anything else is the notebook.
