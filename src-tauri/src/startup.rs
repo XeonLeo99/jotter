@@ -24,7 +24,9 @@ mod platform {
         command.push("\"");
         // Windows documents a 260-character limit for a Run command line.
         if command.encode_wide().count() > 260 {
-            return Err(Error::Invalid("程序路径过长，请移到较短的路径后开启自启".into()));
+            return Err(Error::Invalid(
+                "程序路径过长，请移到较短的路径后开启自启".into(),
+            ));
         }
         Ok(command)
     }
@@ -69,7 +71,11 @@ mod platform {
         } else {
             None
         };
-        write_entry(&RegKey::predef(HKEY_CURRENT_USER), RUN_KEY, command.as_ref())?;
+        write_entry(
+            &RegKey::predef(HKEY_CURRENT_USER),
+            RUN_KEY,
+            command.as_ref(),
+        )?;
         Ok(())
     }
 
