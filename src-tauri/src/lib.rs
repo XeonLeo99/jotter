@@ -19,6 +19,7 @@ compile_error!(
 mod commands;
 mod error;
 mod model;
+mod startup;
 mod store;
 mod tray;
 mod window;
@@ -165,6 +166,8 @@ pub fn run() {
             commands::toggle_panel,
             commands::close_panel,
             commands::set_pinned,
+            commands::get_autostart,
+            commands::set_autostart,
             commands::suspend_auto_collapse,
             commands::hide_widget,
             commands::report_error,

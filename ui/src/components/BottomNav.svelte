@@ -1,6 +1,5 @@
 <!--
-  Two-tab switcher at the foot of the notebook: the paper notepad, and the
-  skills library. The active tab lives in the parent, which owns which content
+  Tab switcher at the foot of the notebook. The active tab lives in the parent, which owns which content
   the panel shows; this component only renders the affordance.
 -->
 <script lang="ts">
@@ -8,7 +7,7 @@
 
   let {
     active = $bindable('notes'),
-  }: { active?: 'notes' | 'skills' } = $props();
+  }: { active?: 'notes' | 'skills' | 'settings' } = $props();
 </script>
 
 <nav class="nav">
@@ -31,6 +30,16 @@
   >
     <Icon name="sparkle" size={14} />
     <span>技能</span>
+  </button>
+  <button
+    class="tab"
+    class:on={active === 'settings'}
+    onclick={() => (active = 'settings')}
+    aria-pressed={active === 'settings'}
+    title="设置"
+  >
+    <Icon name="settings" size={14} />
+    <span>设置</span>
   </button>
 </nav>
 

@@ -50,6 +50,10 @@ export const closePanel = () => invoke<void>('close_panel');
 
 export const setPinned = (pinned: boolean) => invoke<void>('set_pinned', { pinned });
 
+export const getAutostart = () => invoke<boolean>('get_autostart');
+
+export const setAutostart = (enabled: boolean) => invoke<void>('set_autostart', { enabled });
+
 /** Bracket any native dialog with this, or the focus it steals collapses the
  * panel before the dialog can be answered. */
 export const suspendAutoCollapse = (suspend: boolean) =>

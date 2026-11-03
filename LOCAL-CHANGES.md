@@ -1,6 +1,6 @@
 # 本地宠物版本
 
-GUGUGAGA 宠物版 v0.2.1，基于 Jotter v0.2.0（`901e1f8`）。悬浮小猫已替换为用户提供的 GUGUGAGA 素材。
+GUGUGAGA 宠物版 v0.2.2，基于 Jotter v0.2.0（`901e1f8`）。悬浮小猫已替换为用户提供的 GUGUGAGA 素材。
 
 成品下载：[最新 Release](https://github.com/XeonLeo99/jotter/releases/latest)，选择 `*-portable.exe` 免安装运行。
 
@@ -14,6 +14,17 @@ GUGUGAGA 宠物版 v0.2.1，基于 Jotter v0.2.0（`901e1f8`）。悬浮小猫�
 - 动画短暂播放后停在首帧，系统开启减少动态效果时使用静态帧。
 - 原 `Cat.svelte` 留在源码中作为原版参考，不会包含进最终构建。
 - 浏览器预览补齐了事件释放的模拟接口，避免切换页面或热更新时报错。
+
+## 开机自启
+
+点击宠物展开面板，在底部「设置」页开启「开机自启」。默认关闭，只在当前用户登录 Windows 后启动，先显示宠物，便签面板保持收起。关闭开关即可取消。
+
+- 只写入当前用户 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 的 `Jotter` 项，无需管理员权限。
+- 直接读取系统启动项，开关状态在重启后保留；不会因打开程序而自动注册自启。
+- 启动路径加双引号，支持中文和空格；若便携 EXE 移动或改名，请从新位置运行后重新开启。删除或卸载前请先关闭。
+- 如果在任务管理器中禁用了 Jotter，请在那里重新启用。
+- 不修改笔记数据。注册表读写失败会显示错误，开关不会假装保存成功。
+- Rust 测试只使用临时测试键，覆盖读取、写入、关闭、路径更新及其他项目不受影响，不操作真实启动项。
 
 ## 没有本地 MSVC 时
 
@@ -44,8 +55,8 @@ npx.cmd --yes pnpm@10.12.1 dev
 更新 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 和 `src-tauri/Cargo.lock` 中的应用版本，并更新 `.github/release-notes.md`。提交后推送相同版本的标签，例如：
 
 ```powershell
-git tag v0.2.1
-git push origin main v0.2.1
+git tag v0.2.2
+git push origin main v0.2.2
 ```
 
 CI 检查和 Windows EXE 启动验收通过后，会自动创建 GitHub Release，上传便携 EXE 和安装包。已发布的版本使用新的版本号发布后续修改。

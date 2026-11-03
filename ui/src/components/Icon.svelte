@@ -23,6 +23,7 @@
     book: ['M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20'],
     'arrow-left': ['M19 12H5', 'M12 19l-7-7 7-7'],
     search: ['M11 3a8 8 0 1 0 0 16 8 8 0 0 0 0-16Z', 'M21 21l-4.3-4.3'],
+    settings: ['M4 7h8', 'M16 7h4', 'M4 17h4', 'M12 17h8', 'M12 4v6h4V4Z', 'M8 14v6h4v-6Z'],
   } as const;
 
   type IconName = keyof typeof PATHS;

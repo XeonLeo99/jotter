@@ -64,11 +64,17 @@ const fixture: Workspace = {
 };
 
 let nextId = 100;
+let autostartEnabled = false;
 
 /** Minimal in-memory stand-in for the Rust command surface. */
 function handle(cmd: string, args: Record<string, unknown>): unknown {
   const active = fixture.cards.find((c) => c.id === fixture.activeCardId);
   switch (cmd) {
+    case 'get_autostart':
+      return autostartEnabled;
+    case 'set_autostart':
+      autostartEnabled = args.enabled as boolean;
+      return undefined;
     case 'load_workspace':
       return fixture;
     case 'set_active_card':

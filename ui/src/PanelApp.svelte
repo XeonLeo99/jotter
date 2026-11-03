@@ -17,6 +17,7 @@
   import Icon from './components/Icon.svelte';
   import ItemList from './components/ItemList.svelte';
   import Skills from './components/Skills.svelte';
+  import Settings from './components/Settings.svelte';
   import Toast from './components/Toast.svelte';
   import Toolbar from './components/Toolbar.svelte';
   import { pressToDrag } from './lib/drag';
@@ -26,7 +27,7 @@
   let menuOpen = $state(false);
   /** Which side of the notebook the foot navigation is showing. Session-only:
    * it always starts on the notepad. */
-  let tab = $state<'notes' | 'skills'>('notes');
+  let tab = $state<'notes' | 'skills' | 'settings'>('notes');
 
   onMount(() => {
     void workspace.load();
@@ -181,8 +182,10 @@
         <div class="paper"><ItemList /></div>
         <Composer />
         <Toolbar />
-      {:else}
+      {:else if tab === 'skills'}
         <Skills />
+      {:else}
+        <Settings />
       {/if}
 
       <BottomNav bind:active={tab} />

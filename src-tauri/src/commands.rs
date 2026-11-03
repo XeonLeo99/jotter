@@ -250,6 +250,16 @@ pub fn write_text_file(path: String, text: String) -> Result<()> {
 
 // --------------------------------------------------------------------- window
 
+#[tauri::command]
+pub fn get_autostart() -> Result<bool> {
+    crate::startup::enabled()
+}
+
+#[tauri::command]
+pub fn set_autostart(enabled: bool) -> Result<()> {
+    crate::startup::set_enabled(enabled)
+}
+
 /// What a click on the mascot does. Rust owns the open/closed state rather than
 /// taking it as an argument: the webview cannot see the focus-loss close that may
 /// have happened microseconds earlier, so a state it computed would be stale
