@@ -72,7 +72,7 @@ jobs:
         run: cargo clippy --locked --features custom-protocol --all-targets -- -D warnings
       - name: Windows startup registry tests
         working-directory: src-tauri
-        run: cargo test --locked --features custom-protocol --lib startup::
+        run: cargo test --locked --features custom-protocol --lib startup
 
   installer:
     name: Windows installer
