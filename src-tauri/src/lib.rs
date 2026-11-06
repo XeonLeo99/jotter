@@ -19,6 +19,7 @@ compile_error!(
 mod commands;
 mod error;
 mod model;
+mod reminder;
 mod schedule;
 mod startup;
 mod store;
@@ -75,6 +76,7 @@ pub fn run() {
                 }),
             )?);
             app.manage(Ui::default());
+            app.manage(reminder::Status::default());
 
             let ball = window::ball_window(app)?;
             window::place_initial(&ball, &app.state::<Store>())?;
@@ -103,6 +105,7 @@ pub fn run() {
             if let Err(err) = register_shortcut(&handle) {
                 log::error!("no Ctrl+Alt+J hotkey, starting without one: {err}");
             }
+            reminder::start(handle);
             Ok(())
         })
         .on_window_event(|raw, event| {
@@ -154,6 +157,8 @@ pub fn run() {
             commands::load_workspace,
             commands::get_badge,
             commands::set_item_schedule,
+            reminder::get_reminder_status,
+            reminder::test_notification,
             commands::create_card,
             commands::rename_card,
             commands::delete_card,
