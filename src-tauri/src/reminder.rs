@@ -51,7 +51,9 @@ pub fn start(app: tauri::AppHandle) {
 
 #[tauri::command]
 pub fn get_reminder_status(app: tauri::AppHandle) -> Option<String> {
-    app.state::<Status>().0.lock().clone()
+    let status = app.state::<Status>();
+    let error = status.0.lock().clone();
+    error
 }
 
 #[tauri::command]

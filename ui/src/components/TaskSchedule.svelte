@@ -53,7 +53,8 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form class="editor" onsubmit={save} onkeydown={escape} aria-label="任务时间设置">
-  <header><strong>截止与循环</strong><button type="button" onclick={onclose} disabled={busy}>取消</button></header>
+  <header><strong>截止与循环</strong><div class="actions"><button type="button" onclick={onclose} disabled={busy}>取消</button><button type="submit" class="save" disabled={busy}>{busy ? '保存中…' : '保存设置'}</button></div></header>
+  <div class="body">
   <p class="task">{item.text}</p>
   <div class="fields">
     <label>本期截止时间（可选）<input type="datetime-local" bind:value={due} min="2000-01-01T00:00" max="2099-12-31T23:59" /></label>
@@ -67,12 +68,14 @@
   <p class="hint">完成后保持勾选，到重置时间才恢复未完成，截止时间同步顺延。每月遇到短月按月底处理。</p>
   <p class="hint">提醒需保持 Jotter 运行（可收起到托盘），检查间隔约 15 秒；退出期间错过的提醒会在重开后补一次。</p>
   {#if error}<p class="error" role="alert">{error}</p>{/if}
-  <footer><button type="submit" class="save" disabled={busy}>{busy ? '正在保存…' : '保存设置'}</button></footer>
+  </div>
 </form>
 
 <style>
-  .editor { position: absolute; inset: 34px 0 34px 23px; z-index: 10; overflow-y: auto; padding: 10px 14px; background: var(--paper); }
-  header, footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .editor { position: absolute; inset: 34px 0 34px 23px; z-index: 10; display: flex; flex-direction: column; padding: 8px 14px; background: var(--paper); }
+  header { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--hairline); }
+  .actions { display: flex; gap: 6px; }
+  .body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 2px; }
   strong { font-size: 13px; }
   button { padding: 5px 10px; font-size: 12px; background: var(--surface-hover); }
   .task { font-size: 12px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 6px 0 10px; }
@@ -81,6 +84,5 @@
   input, select { width: 100%; min-width: 0; font: inherit; font-size: 12px; padding: 6px; border: 1px solid var(--hairline-strong); border-radius: 6px; background: var(--surface); color: var(--text); }
   .hint { font-size: 11px; line-height: 1.5; color: var(--text-faint); margin: 10px 0; }
   .error { font-size: 12px; color: var(--danger); }
-  footer { justify-content: flex-end; }
   .save { color: white; background: var(--accent); }
 </style>

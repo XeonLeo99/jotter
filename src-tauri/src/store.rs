@@ -173,3 +173,90 @@ fn persist(path: &Path, workspace: &Workspace) -> Result<()> {
     fs::rename(&tmp, path)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::Error;
+    use crate::model::Item;
+
+    struct Fixture(PathBuf);
+    impl Fixture {
+        fn new() -> Self {
+            Self(std::env::temp_dir().join(format!("jotter-test-{}", uuid::Uuid::new_v4())))
+        }
+        fn load(&self) -> Store {
+            Store::load(self.0.join("workspace.json"), Box::new(|_| {})).unwrap()
+        }
+    }
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn reminder_success_persists_and_failure_can_retry() {
+        let fixture = Fixture::new();
+        let store = fixture.load();
+        store
+            .write(|ws| {
+                let mut item = Item::new("remind".into());
+                item.schedule.due_at = Some(100000);
+                item.schedule.remind_before_minutes = Some(1);
+                ws.cards[0].items.push(item);
+                Ok(())
+            })
+            .unwrap();
+        assert!(!store
+            .process_time(40000, |_, _| Err(Error::Invalid("disabled".into())))
+            .unwrap());
+        assert!(store.read(|ws| schedule::needs_reminder(&ws.cards[0].items[0], 40000)));
+        let mut calls = 0;
+        assert!(store
+            .process_time(40000, |_, _| {
+                calls += 1;
+                Ok(())
+            })
+            .unwrap());
+        assert_eq!(calls, 1);
+        drop(store);
+        let store = fixture.load();
+        assert!(!store
+            .process_time(200000, |_, _| panic!("duplicate notification"))
+            .unwrap());
+        assert_eq!(store.read(|ws| badge(ws, 200000).urgent), 1);
+        store
+            .write(|ws| {
+                ws.cards[0].items[0].done = true;
+                Ok(())
+            })
+            .unwrap();
+        assert_eq!(store.read(|ws| badge(ws, 200000).urgent), 0);
+    }
+
+    #[test]
+    fn failed_mutations_do_not_change_memory_or_disk() {
+        let fixture = Fixture::new();
+        let store = fixture.load();
+        let before = serde_json::to_string(&store.snapshot()).unwrap();
+        let result: Result<()> = store.write(|ws| {
+            ws.cards[0].title = "not saved".into();
+            Err(Error::Invalid("test failure".into()))
+        });
+        assert!(result.is_err());
+        assert_eq!(serde_json::to_string(&store.snapshot()).unwrap(), before);
+        // Obstruct the temporary file to simulate a disk-write failure.
+        fs::create_dir(store.path.with_extension("json.tmp")).unwrap();
+        assert!(store
+            .write(|ws| {
+                ws.cards[0].title = "not saved either".into();
+                Ok(())
+            })
+            .is_err());
+        assert_eq!(serde_json::to_string(&store.snapshot()).unwrap(), before);
+        let disk: Workspace =
+            serde_json::from_str(&fs::read_to_string(&store.path).unwrap()).unwrap();
+        assert_eq!(serde_json::to_string(&disk).unwrap(), before);
+    }
+}
