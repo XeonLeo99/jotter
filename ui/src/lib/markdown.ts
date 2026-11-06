@@ -3,6 +3,7 @@
  * only be able to approximate. */
 
 import type { Card } from './types';
+import { nextReset } from './schedule';
 
 const stamp = (ms: number) =>
   new Date(ms).toLocaleString(undefined, {
@@ -30,6 +31,11 @@ export function cardToMarkdown(card: Card): string {
   } else {
     for (const item of card.items) {
       lines.push(`- [${item.done ? 'x' : ' '}] ${item.text}`);
+      const s = item.schedule;
+      if (s?.dueAt != null) lines.push(`  - 截止：${stamp(s.dueAt)}`);
+      if (s?.remindBeforeMinutes != null) lines.push(`  - 提醒：提前 ${s.remindBeforeMinutes} 分钟`);
+      const reset = nextReset(s);
+      if (s?.repeat && reset != null) lines.push(`  - 循环：${s.repeat.frequency === 'weekly' ? '每周' : '每月'}；下次重置：${stamp(reset)}`);
     }
   }
   return lines.join('\n') + '\n';

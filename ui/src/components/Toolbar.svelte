@@ -71,7 +71,7 @@
   </button>
   <!-- Labelled rather than icon-only: the double-check glyph on its own reads as
        "mark everything done", which is the opposite of what this does. -->
-  <button class="act" onclick={() => workspace.clearDone()} title="清除本卡片中已解决的条目">
+  <button class="act" onclick={() => workspace.clearDone()} title="清除已完成条目，保留循环任务">
     <Icon name="check-all" />
     <span>清理</span>
   </button>

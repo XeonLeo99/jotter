@@ -2,10 +2,13 @@
      text to correct a typo. -->
 <script lang="ts">
   import Icon from './Icon.svelte';
+  import TaskSchedule from './TaskSchedule.svelte';
+  import { isUrgent, scheduleLabel } from '../lib/schedule';
   import { workspace } from '../lib/store.svelte';
   import type { Item } from '../lib/types';
 
   let editingId = $state<string | null>(null);
+  let scheduling = $state<Item | null>(null);
   let scroller = $state<HTMLDivElement | null>(null);
 
   // Follow the tail as items are appended, the way a log view does. Reading
@@ -34,6 +37,9 @@
 </script>
 
 <div class="list" bind:this={scroller}>
+  {#if scheduling && workspace.activeId}
+    <TaskSchedule item={scheduling} cardId={workspace.activeId} onclose={() => scheduling = null} />
+  {/if}
   {#if workspace.items.length === 0}
     <p class="empty">
       <!-- A pen, not a tick: on a card with nothing on it yet, "all done" is the
@@ -66,9 +72,13 @@
             onkeydown={onEditKey}
           />
         {:else}
-          <button class="text" onclick={() => (editingId = item.id)} title="点击修改">
-            {item.text}
-          </button>
+          <div class="content">
+            <button class="text" onclick={() => (editingId = item.id)} title="点击修改">{item.text}</button>
+            {#if scheduleLabel(item, workspace.now)}
+              <button class="timing" class:urgent={isUrgent(item, workspace.now)} onclick={() => scheduling = item}>{scheduleLabel(item, workspace.now)}</button>
+            {/if}
+          </div>
+          <button class="schedule" onclick={() => scheduling = item} title="截止、提醒与循环" aria-label="截止、提醒与循环"><Icon name="calendar" size={13} /></button>
           <button
             class="kill"
             onclick={() => workspace.removeItem(item)}
@@ -84,6 +94,11 @@
 </div>
 
 <style>
+  .content { flex: 1; min-width: 0; }
+  .timing { display: block; padding: 2px 0; font-size: 10px; color: var(--text-faint); text-align: left; white-space: normal; }
+  .timing.urgent { color: var(--danger); }
+  .schedule { width: 20px; height: 20px; flex: none; color: var(--text-faint); }
+  .schedule:hover { color: var(--accent); background: var(--surface-hover); }
   .list {
     flex: 1;
     min-height: 0;

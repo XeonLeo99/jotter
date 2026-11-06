@@ -3,9 +3,14 @@
  * place. */
 
 import { invoke } from '@tauri-apps/api/core';
-import type { Card, Item, Skill, Workspace } from './types';
+import type { Badge, Card, Item, ScheduleInput, Skill, Workspace } from './types';
 
 export const loadWorkspace = () => invoke<Workspace>('load_workspace');
+export const getBadge = () => invoke<Badge>('get_badge');
+export const setItemSchedule = (cardId: string, itemId: string, schedule: ScheduleInput) =>
+  invoke<Item>('set_item_schedule', { cardId, itemId, schedule });
+export const testNotification = () => invoke<void>('test_notification');
+export const getReminderStatus = () => invoke<string | null>('get_reminder_status');
 
 export const createCard = (title?: string) => invoke<Card>('create_card', { title });
 

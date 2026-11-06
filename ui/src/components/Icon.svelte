@@ -6,6 +6,7 @@
 <script lang="ts">
   const PATHS = {
     plus: ['M12 5v14', 'M5 12h14'],
+    calendar: ['M4 5h16v16H4Z', 'M8 3v4', 'M16 3v4', 'M4 10h16', 'M8 14h2', 'M14 14h2'],
     check: ['M20 6 9 17l-5-5'],
     'check-all': ['M2 13l4 4 8-8', 'M12 15l3 3 7-8'],
     pen: ['M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z', 'M14.5 5.5l4 4'],

@@ -6,7 +6,8 @@
  */
 
 import './app.css';
-import type { Card, Item, Skill, Workspace } from './lib/types';
+import type { Card, Item, ScheduleInput, Skill, Workspace } from './lib/types';
+import { isUrgent } from './lib/schedule';
 
 const seed = (title: string, accent: number, lines: Array<[string, boolean]>): Card => ({
   id: `card-${accent}`,
@@ -65,18 +66,60 @@ const fixture: Workspace = {
 
 let nextId = 100;
 let autostartEnabled = false;
+const listeners = new Map<number, { event: string; handler: (value: unknown) => void }>();
+function emit(event: string, payload: unknown) {
+  for (const [id, listener] of listeners) if (listener.event === event) listener.handler({ event, id, payload });
+}
+function badge() {
+  const items = fixture.cards.flatMap((c) => c.items);
+  return { count: items.filter((i) => !i.done).length, urgent: items.filter((i) => isUrgent(i)).length };
+}
 
 /** Minimal in-memory stand-in for the Rust command surface. */
 function handle(cmd: string, args: Record<string, unknown>): unknown {
   const active = fixture.cards.find((c) => c.id === fixture.activeCardId);
   switch (cmd) {
+    case 'plugin:event|listen': {
+      const id = nextId++;
+      listeners.set(id, { event: args.event as string, handler: args.handler as (value: unknown) => void });
+      return id;
+    }
+    case 'plugin:event|unlisten':
+      listeners.delete(args.eventId as number); return;
+    case 'get_badge': return badge();
+    case 'get_reminder_status': return null;
+    case 'test_notification': return;
+    case 'set_item_schedule': {
+      const item = fixture.cards.find((c) => c.id === args.cardId)?.items.find((i) => i.id === args.itemId);
+      if (!item) throw new Error('task not found');
+      const input = args.schedule as ScheduleInput;
+      item.schedule = {
+        dueAt: input.dueAt, remindBeforeMinutes: input.remindBeforeMinutes, notifiedFor: null,
+        repeat: input.frequency && input.nextResetAt ? { frequency: input.frequency, resetAnchor: input.nextResetAt, dueAnchor: input.dueAt, occurrence: 0 } : null,
+      };
+      emit('badge-state', badge());
+      return structuredClone(item);
+    }
+    case 'update_item': {
+      const item = fixture.cards.find((c) => c.id === args.cardId)?.items.find((i) => i.id === args.itemId);
+      if (item) {
+        if (typeof args.done === 'boolean') item.done = args.done;
+        if (typeof args.text === 'string') item.text = args.text;
+      }
+      emit('badge-state', badge()); return;
+    }
+    case 'delete_item': {
+      const card = fixture.cards.find((c) => c.id === args.cardId);
+      if (card) card.items = card.items.filter((i) => i.id !== args.itemId);
+      emit('badge-state', badge()); return;
+    }
     case 'get_autostart':
       return autostartEnabled;
     case 'set_autostart':
       autostartEnabled = args.enabled as boolean;
       return undefined;
     case 'load_workspace':
-      return fixture;
+      return structuredClone(fixture);
     case 'set_active_card':
       fixture.activeCardId = args.cardId as string;
       return undefined;
@@ -85,7 +128,7 @@ function handle(cmd: string, args: Record<string, unknown>): unknown {
       card.id = `card-new-${nextId++}`;
       fixture.cards.push(card);
       fixture.activeCardId = card.id;
-      return card;
+      return structuredClone(card);
     }
     case 'add_item': {
       const item: Item = {
@@ -95,11 +138,11 @@ function handle(cmd: string, args: Record<string, unknown>): unknown {
         createdAt: Date.now(),
       };
       active?.items.push(item);
-      return item;
+      return structuredClone(item);
     }
     case 'clear_done': {
       const before = active?.items.length ?? 0;
-      if (active) active.items = active.items.filter((i) => !i.done);
+      if (active) active.items = active.items.filter((i) => !i.done || i.schedule?.repeat);
       return before - (active?.items.length ?? 0);
     }
     // Skills resolve through the store's own mirror, so these only return what

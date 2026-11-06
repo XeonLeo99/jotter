@@ -16,10 +16,12 @@
   import Pet from './components/Pet.svelte';
   import { pressToDrag } from './lib/drag';
   import * as ipc from './lib/ipc';
+  import type { Badge } from './lib/types';
 
   let pressed = $state(false);
   let panelOpen = $state(false);
   let badge = $state(0);
+  let urgent = $state(0);
   /** True during a short pet animation. Keep the resident window still between
    * bursts to avoid continually recompositing the transparent desktop layer. */
   let stir = $state(false);
@@ -71,7 +73,7 @@
     panelOpen
       ? '点击收起记事本 · 拖动可移动'
       : badge > 0
-        ? `还有 ${badge} 条未解决 · 点击打开记事本，拖动可移动`
+        ? `还有 ${badge} 条未解决${urgent ? `，${urgent} 条即将到期或逾期` : ''} · 点击打开记事本，拖动可移动`
         : 'Jotter — 点击打开记事本，拖动可移动（Ctrl+Alt+J）',
   );
 
@@ -89,6 +91,7 @@
       if (count > badge) stirOnce();
       badge = count;
     });
+    track<Badge>('badge-state', (state) => { badge = state.count; urgent = state.urgent; });
     track<boolean>('panel-state', (open) => {
       panelOpen = open;
       stirOnce();
@@ -96,9 +99,10 @@
 
     // First paint has no event to wait for; one snapshot read seeds the badge.
     void ipc
-      .loadWorkspace()
-      .then((ws) => {
-        badge = ws.cards.reduce((sum, c) => sum + c.items.filter((i) => !i.done).length, 0);
+      .getBadge()
+      .then((state) => {
+        badge = state.count;
+        urgent = state.urgent;
       })
       .catch(() => {});
 
@@ -145,7 +149,7 @@
   >
     <Pet {pressed} {stir} open={panelOpen} />
     {#if badge > 0}
-      <span class="badge">{badge > 99 ? '99+' : badge}</span>
+      <span class="badge" class:urgent={urgent > 0}>{badge > 99 ? '99+' : badge}</span>
     {/if}
   </button>
 </div>
@@ -226,4 +230,5 @@
         0 0 0 2px rgba(28, 28, 36, 0.9);
     }
   }
+  .badge.urgent { background: #d92d3e; }
 </style>

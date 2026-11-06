@@ -7,7 +7,7 @@
  */
 
 import * as ipc from './ipc';
-import type { Card, Item, Skill } from './types';
+import type { Card, Item, ScheduleInput, Skill } from './types';
 
 export const ACCENTS = 6;
 
@@ -51,6 +51,7 @@ class WorkspaceState {
   activeId = $state<string | null>(null);
   pinned = $state(false);
   ready = $state(false);
+  now = $state(Date.now());
 
   active = $derived(this.cards.find((c) => c.id === this.activeId) ?? null);
   items = $derived(this.active?.items ?? []);
@@ -151,13 +152,21 @@ class WorkspaceState {
     if (res.ok) card.items = card.items.filter((i) => i.id !== item.id);
   }
 
+  async saveSchedule(cardId: string, itemId: string, schedule: ScheduleInput): Promise<boolean> {
+    const res = await guard(() => ipc.setItemSchedule(cardId, itemId, schedule), '保存任务时间失败');
+    if (!res.ok) return false;
+    const card = this.cards.find((c) => c.id === cardId);
+    if (card) card.items = card.items.map((i) => i.id === itemId ? res.value : i);
+    return true;
+  }
+
   async clearDone() {
     const card = this.active;
     if (!card) return;
     const res = await guard(() => ipc.clearDone(card.id), '清理失败');
     if (!res.ok) return;
-    card.items = card.items.filter((i) => !i.done);
-    toasts.show(res.value > 0 ? `已清理 ${res.value} 条` : '没有已完成的条目');
+    card.items = card.items.filter((i) => !i.done || i.schedule?.repeat);
+    toasts.show(res.value > 0 ? `已清理 ${res.value} 条，循环任务保留` : '没有可清理的条目（循环任务保留）');
   }
 
   // ------------------------------------------------------------------ skills

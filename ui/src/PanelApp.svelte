@@ -31,6 +31,7 @@
 
   onMount(() => {
     void workspace.load();
+    const clock = setInterval(() => { workspace.now = Date.now(); }, 15000);
 
     const disposers: Array<() => void> = [];
     const track = <T,>(event: string, run: (payload: T) => void) => {
@@ -44,7 +45,7 @@
     });
     track('workspace-changed', () => void workspace.load());
 
-    return () => disposers.forEach((off) => off());
+    return () => { clearInterval(clock); disposers.forEach((off) => off()); };
   });
 
   /** The header and spine are the window's drag handle — the panel has no title

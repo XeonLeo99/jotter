@@ -6,7 +6,23 @@ export interface Item {
   text: string;
   done: boolean;
   createdAt: number;
+  schedule?: Schedule;
 }
+
+export type Frequency = 'weekly' | 'monthly';
+export interface Schedule {
+  dueAt: number | null;
+  remindBeforeMinutes: number | null;
+  notifiedFor: number | null;
+  repeat: { frequency: Frequency; resetAnchor: number; dueAnchor: number | null; occurrence: number } | null;
+}
+export interface ScheduleInput {
+  dueAt: number | null;
+  remindBeforeMinutes: number | null;
+  frequency: Frequency | null;
+  nextResetAt: number | null;
+}
+export interface Badge { count: number; urgent: number }
 
 export interface Card {
   id: string;

@@ -8,6 +8,20 @@
   let ready = $state(false);
   let error = $state('');
   let status = $state('');
+  let notificationBusy = $state(false);
+  let notificationError = $state<string | null>(null);
+  let notificationStatus = $state('');
+
+  async function testNotification() {
+    notificationBusy = true;
+    notificationStatus = '';
+    try {
+      await ipc.testNotification();
+      notificationError = null;
+      notificationStatus = '已提交给 Windows，请检查右下角或通知中心。';
+    } catch (err) { notificationError = String(err); }
+    finally { notificationBusy = false; }
+  }
 
   async function refresh() {
     busy = true;
@@ -43,10 +57,15 @@
 
   onMount(() => {
     void refresh();
+    void ipc.getReminderStatus().then((value) => notificationError = value).catch((err) => notificationError = String(err));
     // This webview stays alive while hidden. Re-read on opening and after
     // returning to this tab, so a stale UI never overwrites external changes.
     let disposed = false;
     let unlisten: (() => void) | undefined;
+    let offStatus: (() => void) | undefined;
+    void listen<string | null>('reminder-status', (event) => notificationError = event.payload).then((off) => {
+      if (disposed) off(); else offStatus = off;
+    });
     void listen<boolean>('panel-state', (event) => {
       if (event.payload && !busy) void refresh();
     }).then((off) => {
@@ -56,6 +75,7 @@
     return () => {
       disposed = true;
       unlisten?.();
+      offStatus?.();
     };
   });
 </script>
@@ -85,9 +105,18 @@
   {:else}
     <p class="status" role="status">{busy ? '正在处理…' : status}</p>
   {/if}
+  <div class="notifications">
+    <h2>任务提醒</h2>
+    <p>在任务右侧的日历按钮中设置截止时间、提前提醒和循环。</p>
+    <p class="hint">保持 Jotter 运行即可提醒；勿扰模式可能让通知只出现在通知中心。没有开启提醒的任务在逾期后角标也会变红。</p>
+    <button class="retry" onclick={testNotification} disabled={notificationBusy}>{notificationBusy ? '发送中…' : '发送测试通知'}</button>
+    {#if notificationError}<p class="error" role="alert">{notificationError}</p>{/if}
+    <p class="status" role="status">{notificationStatus}</p>
+  </div>
 </section>
 
 <style>
+  .notifications { border-top: 1px solid var(--hairline); padding-top: 14px; margin-top: 14px; }
   .settings {
     flex: 1;
     min-height: 0;
