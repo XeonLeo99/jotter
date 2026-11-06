@@ -1,6 +1,8 @@
 > **GUGUGAGA 宠物版**：本 fork 将原版小猫替换为提供的 Codex pet 动画素材，保留点击展开、拖动、待办角标和自动保存。
 >
-> **下载改版 EXE**：打开 [最新 Release](https://github.com/XeonLeo99/jotter/releases/latest)，在 Assets 下载 `Jotter-v0.2.2-portable.exe`，免安装直接运行；也提供安装包。本机无需 MSVC。
+> **下载改版 EXE**：打开 [最新 Release](https://github.com/XeonLeo99/jotter/releases/latest)，在 Assets 下载 `Jotter-v0.3.0-portable.exe`，免安装直接运行；也提供安装包。本机无需 MSVC。
+>
+> **截止、提醒与循环**：任务右侧日历按钮可设置 DDL、提前提醒和每周／每月重置。临近截止或逾期的未完成任务会让宠物角标变红；全部处理后恢复。详情见 [时间与提醒规则](LOCAL-CHANGES.md#截止提醒与循环)。
 >
 > **开机自启**：点击宠物展开面板 → 底部「设置」→ 开启「开机自启」。默认关闭，仅对当前 Windows 账号生效，无需管理员权限。便携版移动或改名后，请在新位置重新开启；删除程序前请先关闭。
 >

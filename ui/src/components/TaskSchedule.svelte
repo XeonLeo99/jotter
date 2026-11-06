@@ -7,6 +7,7 @@
 
   let { item, cardId, onclose }: { item: Item; cardId: string; onclose: () => void } = $props();
   const initial = untrack(() => item.schedule);
+  const targetCardId = untrack(() => cardId);
   let due = $state(localInput(initial?.dueAt));
   const presets = ['off', '0', '10', '30', '60', '1440'];
   const initialReminder = initial?.remindBeforeMinutes == null ? 'off' : String(initial.remindBeforeMinutes);
@@ -41,7 +42,7 @@
     }
     busy = true;
     try {
-      if (await workspace.saveSchedule(cardId, item.id, { dueAt, remindBeforeMinutes: minutes, frequency: frequency || null, nextResetAt })) onclose();
+      if (await workspace.saveSchedule(targetCardId, item.id, { dueAt, remindBeforeMinutes: minutes, frequency: frequency || null, nextResetAt })) onclose();
       else error = '未保存，请检查提示后重试';
     } finally { busy = false; }
   }
