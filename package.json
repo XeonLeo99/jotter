@@ -1,7 +1,7 @@
 {
   "name": "jotter",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "description": "Floating desktop scratchpad for jotting down UI and web issues",
   "license": "MIT",

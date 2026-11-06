@@ -1,6 +1,6 @@
 # 本地宠物版本
 
-GUGUGAGA 宠物版 v0.3.0，基于 Jotter v0.2.0（`901e1f8`）。悬浮小猫已替换为用户提供的 GUGUGAGA 素材。
+GUGUGAGA 宠物版 v0.3.1，基于 Jotter v0.2.0（`901e1f8`）。悬浮小猫已替换为用户提供的 GUGUGAGA 素材。
 
 成品下载：[最新 Release](https://github.com/XeonLeo99/jotter/releases/latest)，选择 `*-portable.exe` 免安装运行。
 
@@ -71,8 +71,8 @@ npx.cmd --yes pnpm@10.12.1 dev
 更新 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 和 `src-tauri/Cargo.lock` 中的应用版本，并更新 `.github/release-notes.md`。提交后推送相同版本的标签，例如：
 
 ```powershell
-git tag v0.3.0
-git push origin main v0.3.0
+git tag v0.3.1
+git push origin main v0.3.1
 ```
 
 CI 检查和 Windows EXE 启动验收通过后，会自动创建 GitHub Release，上传便携 EXE 和安装包。已发布的版本使用新的版本号发布后续修改。

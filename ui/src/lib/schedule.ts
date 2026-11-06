@@ -9,6 +9,8 @@ export function nextReset(schedule?: Schedule): number | null {
   const r = schedule?.repeat;
   if (!r) return null;
   const d = new Date(r.resetAnchor);
+  const hour = d.getHours();
+  const minute = d.getMinutes();
   if (r.frequency === 'weekly') d.setDate(d.getDate() + r.occurrence * 7);
   else {
     const day = d.getDate();
@@ -16,6 +18,15 @@ export function nextReset(schedule?: Schedule): number | null {
     d.setMonth(d.getMonth() + r.occurrence);
     const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
     d.setDate(Math.min(day, last));
+  }
+  // Rust chooses the first valid minute during a spring-forward gap. JS Date
+  // normally preserves minutes (02:30 -> 03:30); match the native 03:00 result.
+  const desired = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), hour, minute);
+  for (let n = 0; n < 180; n++) {
+    const previous = new Date(d.getTime() - 60000);
+    const wall = Date.UTC(previous.getFullYear(), previous.getMonth(), previous.getDate(), previous.getHours(), previous.getMinutes());
+    if (wall < desired) break;
+    d.setTime(previous.getTime());
   }
   return d.getTime();
 }

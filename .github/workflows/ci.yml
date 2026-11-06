@@ -31,6 +31,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Type-check
         run: pnpm check
+      - name: Calendar and urgency tests
+        run: node --test scripts/schedule.test.mjs
       - name: Build bundle
         run: pnpm build
       - name: Icons are up to date with their generator
