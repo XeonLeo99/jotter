@@ -1948,6 +1948,7 @@ dependencies = [
 name = "jotter"
 version = "0.2.2"
 dependencies = [
+ "chrono",
  "log",
  "parking_lot",
  "serde",

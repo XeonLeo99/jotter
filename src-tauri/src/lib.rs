@@ -19,6 +19,7 @@ compile_error!(
 mod commands;
 mod error;
 mod model;
+mod schedule;
 mod startup;
 mod store;
 mod tray;
@@ -68,8 +69,9 @@ pub fn run() {
             let notify = handle.clone();
             app.manage(Store::load(
                 path,
-                Box::new(move |open| {
-                    let _ = notify.emit("badge", open);
+                Box::new(move |state| {
+                    let _ = notify.emit("badge", state.count);
+                    let _ = notify.emit("badge-state", state);
                 }),
             )?);
             app.manage(Ui::default());
@@ -150,6 +152,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::load_workspace,
+            commands::get_badge,
+            commands::set_item_schedule,
             commands::create_card,
             commands::rename_card,
             commands::delete_card,

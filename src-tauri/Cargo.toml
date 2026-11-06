@@ -25,6 +25,7 @@ custom-protocol = ["tauri/custom-protocol"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+chrono = "0.4"
 # `image-png` is what lets `tray.rs` embed the tray asset at compile time.
 tauri = { version = "2.5", features = ["tray-icon", "image-png"] }
 tauri-plugin-clipboard-manager = "2"

@@ -30,6 +30,8 @@ pub struct Item {
     #[serde(default)]
     pub done: bool,
     pub created_at: i64,
+    #[serde(default)]
+    pub schedule: crate::schedule::Schedule,
 }
 
 impl Item {
@@ -39,6 +41,7 @@ impl Item {
             text,
             done: false,
             created_at: now_ms(),
+            schedule: crate::schedule::Schedule::default(),
         }
     }
 }

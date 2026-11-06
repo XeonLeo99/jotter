@@ -6,6 +6,25 @@ use parking_lot::RwLock;
 
 use crate::error::Result;
 use crate::model::{now_ms, Workspace, SCHEMA_VERSION};
+use crate::schedule;
+
+#[derive(Clone, Copy, Debug, serde::Serialize)]
+pub struct Badge {
+    pub count: usize,
+    pub urgent: usize,
+}
+
+pub fn badge(ws: &Workspace, now: i64) -> Badge {
+    Badge {
+        count: ws.open_count(),
+        urgent: ws
+            .cards
+            .iter()
+            .flat_map(|c| &c.items)
+            .filter(|i| schedule::urgent(i, now))
+            .count(),
+    }
+}
 
 /// Single-document, crash-safe persistence for the workspace.
 ///
@@ -18,7 +37,7 @@ use crate::model::{now_ms, Workspace, SCHEMA_VERSION};
 /// A hook on the store rather than a call at the end of each command: there are
 /// eight mutating commands plus the tray, and "remember to notify" is exactly the
 /// kind of step that gets forgotten when a ninth is added.
-pub type ChangeHook = Box<dyn Fn(usize) + Send + Sync>;
+pub type ChangeHook = Box<dyn Fn(Badge) + Send + Sync>;
 
 pub struct Store {
     path: PathBuf,
@@ -80,16 +99,58 @@ impl Store {
     pub fn write<R>(&self, f: impl FnOnce(&mut Workspace) -> Result<R>) -> Result<R> {
         let (out, open) = {
             let mut guard = self.inner.write();
-            let out = f(&mut guard)?;
-            guard.normalise();
-            persist(&self.path, &guard)?;
-            (out, guard.open_count())
+            // Commit the in-memory state only after the disk write succeeds.
+            let mut next = guard.clone();
+            let out = f(&mut next)?;
+            next.normalise();
+            persist(&self.path, &next)?;
+            *guard = next;
+            (out, badge(&guard, now_ms()))
         };
         // Deliberately outside the lock: the hook reaches into Tauri, and a
         // listener that reads the store back would deadlock against our own
         // write guard.
         (self.on_change)(open);
         Ok(out)
+    }
+
+    /// Called by one native worker, even while both webviews are hidden.
+    /// No file writes when nothing changed. Holding the lock prevents a
+    /// concurrent completion/deletion from racing the decision to send.
+    pub fn process_time(
+        &self,
+        now: i64,
+        mut send: impl FnMut(&str, &str) -> Result<()>,
+    ) -> Result<bool> {
+        let (changed, state) = {
+            let mut guard = self.inner.write();
+            let mut next = guard.clone();
+            let mut changed = false;
+            for card in &mut next.cards {
+                for item in &mut card.items {
+                    if schedule::advance(item, now) {
+                        changed = true;
+                        card.updated_at = now;
+                    }
+                    if schedule::needs_reminder(item, now) {
+                        match send(&card.title, &item.text) {
+                            Ok(()) => {
+                                item.schedule.notified_for = item.schedule.due_at;
+                                changed = true;
+                            }
+                            Err(err) => log::warn!("reminder delivery failed: {err}"),
+                        }
+                    }
+                }
+            }
+            if changed {
+                persist(&self.path, &next)?;
+                *guard = next;
+            }
+            (changed, badge(&guard, now))
+        };
+        (self.on_change)(state);
+        Ok(changed)
     }
 
     fn flush(&self) -> Result<()> {

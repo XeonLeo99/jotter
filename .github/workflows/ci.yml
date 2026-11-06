@@ -70,9 +70,9 @@ jobs:
       - name: Clippy
         working-directory: src-tauri
         run: cargo clippy --locked --features custom-protocol --all-targets -- -D warnings
-      - name: Windows startup registry tests
+      - name: Rust unit tests
         working-directory: src-tauri
-        run: cargo test --locked --features custom-protocol --lib startup
+        run: cargo test --locked --features custom-protocol --lib
 
   installer:
     name: Windows installer

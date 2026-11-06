@@ -30,6 +30,34 @@ pub fn load_workspace(store: State<'_, Store>) -> Workspace {
 }
 
 #[tauri::command]
+pub fn get_badge(store: State<'_, Store>) -> crate::store::Badge {
+    store.read(|ws| crate::store::badge(ws, crate::model::now_ms()))
+}
+
+#[tauri::command]
+pub fn set_item_schedule(
+    store: State<'_, Store>,
+    card_id: String,
+    item_id: String,
+    schedule: crate::schedule::ScheduleInput,
+) -> Result<Item> {
+    store.write(|ws| {
+        let card = ws
+            .card_mut(&card_id)
+            .ok_or_else(|| Error::not_found("card", &card_id))?;
+        let item = card
+            .item_mut(&item_id)
+            .ok_or_else(|| Error::not_found("item", &item_id))?;
+        let now = crate::model::now_ms();
+        crate::schedule::advance(item, now);
+        item.schedule = crate::schedule::configure(&item.schedule, schedule, now)?;
+        let result = item.clone();
+        card.touch();
+        Ok(result)
+    })
+}
+
+#[tauri::command]
 pub fn create_card(store: State<'_, Store>, title: Option<String>) -> Result<Card> {
     store.write(|ws| {
         let accent = ws.next_accent();
@@ -161,7 +189,8 @@ pub fn clear_done(store: State<'_, Store>, card_id: String) -> Result<usize> {
             .card_mut(&card_id)
             .ok_or_else(|| Error::not_found("card", &card_id))?;
         let before = card.items.len();
-        card.items.retain(|i| !i.done);
+        card.items
+            .retain(|i| !i.done || i.schedule.repeat.is_some());
         let removed = before - card.items.len();
         if removed > 0 {
             card.touch();
