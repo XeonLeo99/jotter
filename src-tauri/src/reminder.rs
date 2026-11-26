@@ -1,6 +1,6 @@
 //! Native worker: reminders and recurrence work while webviews are hidden.
 use parking_lot::Mutex;
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, Manager, State};
 
 use crate::error::{Error, Result};
 use crate::model::now_ms;
@@ -70,8 +70,39 @@ pub async fn test_notification(app: tauri::AppHandle) -> Result<()> {
     result
 }
 
+/// Delivers one sunset forecast and records the local date only after Windows
+/// accepts the toast. Returning `false` means today's notification was already
+/// delivered or the feature was disabled, so a retry loop can safely call this.
+#[tauri::command]
+pub fn notify_sunset(
+    app: tauri::AppHandle,
+    store: State<'_, Store>,
+    date: String,
+    title: String,
+    body: String,
+) -> Result<bool> {
+    if date.len() != 10 || chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d").is_err() {
+        return Err(Error::Invalid("晚霞提醒日期无效".into()));
+    }
+    let pending = store.read(|ws| {
+        ws.sunset.enabled && ws.sunset.last_notified_date.as_deref() != Some(date.as_str())
+    });
+    if !pending {
+        return Ok(false);
+    }
+    show(&title, &body)?;
+    store.write(|ws| {
+        if ws.sunset.enabled && ws.sunset.last_notified_date.as_deref() != Some(date.as_str()) {
+            ws.sunset.last_notified_date = Some(date.clone());
+        }
+        Ok(())
+    })?;
+    set_status(&app, None);
+    Ok(true)
+}
+
 #[cfg(windows)]
-fn show(title: &str, body: &str) -> Result<()> {
+pub(crate) fn show(title: &str, body: &str) -> Result<()> {
     use windows::core::HSTRING;
     use windows::Data::Xml::Dom::XmlDocument;
     use windows::Win32::System::Com::{CoInitializeEx, CoUninitialize, COINIT_MULTITHREADED};
@@ -117,7 +148,7 @@ fn show(title: &str, body: &str) -> Result<()> {
 }
 
 #[cfg(not(windows))]
-fn show(_title: &str, _body: &str) -> Result<()> {
+pub(crate) fn show(_title: &str, _body: &str) -> Result<()> {
     Err(Error::Invalid("系统通知目前仅支持 Windows".into()))
 }
 

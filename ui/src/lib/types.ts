@@ -53,4 +53,23 @@ export interface Workspace {
   skills: Skill[];
   pinned: boolean;
   ballPosition: Point | null;
+  sunset: SunsetSettings;
+}
+
+/** Location and delivery state for the daily sunset forecast. */
+export interface SunsetSettings {
+  enabled: boolean;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  timezone: string | null;
+  lastNotifiedDate: string | null;
+}
+
+export interface SunsetSettingsInput {
+  enabled: boolean;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  timezone: string | null;
 }

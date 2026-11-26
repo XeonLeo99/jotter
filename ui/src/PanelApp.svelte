@@ -23,15 +23,46 @@
   import { pressToDrag } from './lib/drag';
   import * as ipc from './lib/ipc';
   import { workspace } from './lib/store.svelte';
+  import { currentLocalHour, fetchSunsetForecast, formatSunsetDetails, todayDateKey } from './lib/sunset';
 
   let menuOpen = $state(false);
   /** Which side of the notebook the foot navigation is showing. Session-only:
    * it always starts on the notepad. */
   let tab = $state<'notes' | 'skills' | 'settings'>('notes');
+  let sunsetCheckBusy = false;
+  let sunsetLastAttempt = 0;
+
+  async function checkSunsetReminder() {
+    if (sunsetCheckBusy || Date.now() - sunsetLastAttempt < 5 * 60_000) return;
+    sunsetCheckBusy = true;
+    try {
+      const settings = await ipc.getSunsetSettings();
+      // The selected place's timezone controls the 16:00 boundary. Checking
+      // after 16:00 also catches a laptop that was asleep at the exact minute.
+      if (currentLocalHour(settings.timezone) < 16) return;
+      sunsetLastAttempt = Date.now();
+      const date = todayDateKey(settings.timezone);
+      if (!settings.enabled || !settings.location || settings.lastNotifiedDate === date) return;
+      const forecast = await fetchSunsetForecast(settings);
+      await ipc.notifySunset(
+        date,
+        `晚霞提示 · ${settings.location}`,
+        formatSunsetDetails(forecast),
+      );
+    } catch (error) {
+      // A transient weather/API failure is retried on the next five-minute
+      // pass; it should never interrupt note taking or surface a stale toast.
+      console.warn('sunset reminder failed', error);
+    } finally {
+      sunsetCheckBusy = false;
+    }
+  }
 
   onMount(() => {
     void workspace.load();
     const clock = setInterval(() => { workspace.now = Date.now(); }, 15000);
+    void checkSunsetReminder();
+    const sunsetClock = setInterval(() => { void checkSunsetReminder(); }, 30_000);
 
     const disposers: Array<() => void> = [];
     const track = <T,>(event: string, run: (payload: T) => void) => {
@@ -45,7 +76,11 @@
     });
     track('workspace-changed', () => void workspace.load());
 
-    return () => { clearInterval(clock); disposers.forEach((off) => off()); };
+    return () => {
+      clearInterval(clock);
+      clearInterval(sunsetClock);
+      disposers.forEach((off) => off());
+    };
   });
 
   /** The header and spine are the window's drag handle — the panel has no title

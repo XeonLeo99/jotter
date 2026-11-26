@@ -6,7 +6,7 @@
  */
 
 import './app.css';
-import type { Card, Item, ScheduleInput, Skill, Workspace } from './lib/types';
+import type { Card, Item, ScheduleInput, Skill, SunsetSettings, Workspace } from './lib/types';
 import { isUrgent } from './lib/schedule';
 
 const seed = (title: string, accent: number, lines: Array<[string, boolean]>): Card => ({
@@ -36,6 +36,14 @@ const fixture: Workspace = {
   activeCardId: 'card-0',
   pinned: false,
   ballPosition: null,
+  sunset: {
+    enabled: false,
+    location: '',
+    latitude: null,
+    longitude: null,
+    timezone: null,
+    lastNotifiedDate: null,
+  },
   skills: [
     seedSkill(
       'xxx项目生成部署',
@@ -89,6 +97,13 @@ function handle(cmd: string, args: Record<string, unknown>): unknown {
     case 'get_badge': return badge();
     case 'get_reminder_status': return null;
     case 'test_notification': return;
+    case 'get_sunset_settings': return structuredClone(fixture.sunset);
+    case 'set_sunset_settings': {
+      const settings = args.settings as Omit<SunsetSettings, 'lastNotifiedDate'>;
+      fixture.sunset = { ...settings, lastNotifiedDate: null };
+      return;
+    }
+    case 'notify_sunset': return false;
     case 'set_item_schedule': {
       const item = fixture.cards.find((c) => c.id === args.cardId)?.items.find((i) => i.id === args.itemId);
       if (!item) throw new Error('task not found');

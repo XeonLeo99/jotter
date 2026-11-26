@@ -9,6 +9,36 @@ pub const SCHEMA_VERSION: u32 = 1;
 /// Number of accent hues the UI cycles through when new cards are created.
 pub const ACCENT_COUNT: u8 = 6;
 
+/// Daily sunset forecast settings. Coordinates are stored after the UI resolves
+/// the place through Open-Meteo, so the background scheduler never has to guess
+/// which city a free-form name refers to.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct SunsetSettings {
+    pub enabled: bool,
+    pub location: String,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub timezone: Option<String>,
+    #[serde(default)]
+    pub last_notified_date: Option<String>,
+}
+
+impl Default for SunsetSettings {
+    fn default() -> Self {
+        // The location selected for this Jotter instance. The coordinates are
+        // the Open-Meteo geocoding result for Pudong New Area, Shanghai.
+        Self {
+            enabled: true,
+            location: "浦东新区 · 上海市 · 中国".to_owned(),
+            latitude: Some(31.23995),
+            longitude: Some(121.50094),
+            timezone: Some("Asia/Shanghai".to_owned()),
+            last_notified_date: None,
+        }
+    }
+}
+
 pub fn now_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -140,6 +170,9 @@ pub struct Workspace {
     /// user left it across restarts.
     #[serde(default)]
     pub ball_position: Option<Point>,
+    /// Daily sunset forecast and notification settings.
+    #[serde(default)]
+    pub sunset: SunsetSettings,
 }
 
 impl Default for Workspace {
@@ -152,6 +185,7 @@ impl Default for Workspace {
             skills: Vec::new(),
             pinned: false,
             ball_position: None,
+            sunset: SunsetSettings::default(),
         }
     }
 }

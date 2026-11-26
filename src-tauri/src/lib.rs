@@ -156,9 +156,12 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::load_workspace,
             commands::get_badge,
+            commands::get_sunset_settings,
+            commands::set_sunset_settings,
             commands::set_item_schedule,
             reminder::get_reminder_status,
             reminder::test_notification,
+            reminder::notify_sunset,
             commands::create_card,
             commands::rename_card,
             commands::delete_card,

@@ -2,7 +2,7 @@ use tauri::{AppHandle, Runtime, State, WebviewWindow};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 
 use crate::error::{Error, Result};
-use crate::model::{Card, Item, Skill, Workspace};
+use crate::model::{Card, Item, Skill, SunsetSettings, Workspace};
 use crate::store::Store;
 use crate::window::{self, Ui};
 
@@ -16,6 +16,7 @@ const MAX_SKILL_LEN: usize = 50_000;
 /// Upper bound on a single export/copy payload, as a cheap abuse guard on the
 /// IPC boundary.
 const MAX_TEXT_LEN: usize = 1024 * 1024;
+const MAX_LOCATION_LEN: usize = 120;
 
 fn clean(text: &str, max: usize) -> String {
     let trimmed = text.trim();
@@ -32,6 +33,73 @@ pub fn load_workspace(store: State<'_, Store>) -> Workspace {
 #[tauri::command]
 pub fn get_badge(store: State<'_, Store>) -> crate::store::Badge {
     store.read(|ws| crate::store::badge(ws, crate::model::now_ms()))
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SunsetSettingsInput {
+    pub enabled: bool,
+    pub location: String,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub timezone: Option<String>,
+}
+
+#[tauri::command]
+pub fn get_sunset_settings(store: State<'_, Store>) -> SunsetSettings {
+    store.read(|ws| ws.sunset.clone())
+}
+
+#[tauri::command]
+pub fn set_sunset_settings(
+    store: State<'_, Store>,
+    settings: SunsetSettingsInput,
+) -> Result<()> {
+    let location = clean(&settings.location, MAX_LOCATION_LEN);
+    let timezone = settings
+        .timezone
+        .map(|value| clean(&value, 80))
+        .filter(|value| !value.is_empty());
+    if settings.enabled && location.is_empty() {
+        return Err(Error::Invalid("晚霞提醒需要先设置地点".into()));
+    }
+    if settings.enabled
+        && (settings.latitude.is_none()
+            || settings.longitude.is_none()
+            || timezone.is_none())
+    {
+        return Err(Error::Invalid("晚霞地点缺少有效坐标或时区".into()));
+    }
+    if settings
+        .latitude
+        .is_some_and(|value| !value.is_finite() || !(-90.0..=90.0).contains(&value))
+        || settings
+            .longitude
+            .is_some_and(|value| !value.is_finite() || !(-180.0..=180.0).contains(&value))
+    {
+        return Err(Error::Invalid("晚霞地点坐标无效".into()));
+    }
+    store.write(|ws| {
+        let previous_date = ws.sunset.last_notified_date.clone();
+        let changed = ws.sunset.enabled != settings.enabled
+            || ws.sunset.location != location
+            || ws.sunset.latitude != settings.latitude
+            || ws.sunset.longitude != settings.longitude
+            || ws.sunset.timezone != timezone;
+        ws.sunset = SunsetSettings {
+            enabled: settings.enabled,
+            location: location.clone(),
+            latitude: settings.latitude,
+            longitude: settings.longitude,
+            timezone: timezone.clone(),
+            last_notified_date: if changed {
+                None
+            } else {
+                previous_date
+            },
+        };
+        Ok(())
+    })
 }
 
 #[tauri::command]

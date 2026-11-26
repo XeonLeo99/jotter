@@ -84,3 +84,10 @@ CI 检查和 Windows EXE 启动验收通过后，会自动创建 GitHub Release�
 
 这是常用提示词/上下文片段库：保存名称和正文，支持搜索、编辑、删除、一键复制。
 实现位于 `ui/src/components/Skills.svelte`，没有自动执行任务或调用 AI 的逻辑。
+
+## v0.4.0
+
+- Added a configurable daily sunset forecast reminder.
+- The default location is Pudong New Area, Shanghai; the Settings tab can resolve another city or district.
+- Open-Meteo provides sunset time and weather inputs; the notification includes a transparent estimated sunset-glow score.
+- Sunset notifications run after 16:00 in the selected location timezone and are deduplicated per local date.

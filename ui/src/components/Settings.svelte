@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { listen } from '@tauri-apps/api/event';
   import * as ipc from '../lib/ipc';
+  import type { SunsetSettings } from '../lib/types';
+  import { fetchSunsetForecast, formatSunsetDetails, geocodeLocation } from '../lib/sunset';
 
   let enabled = $state(false);
   let busy = $state(true);
@@ -11,6 +13,13 @@
   let notificationBusy = $state(false);
   let notificationError = $state<string | null>(null);
   let notificationStatus = $state('');
+  let sunsetEnabled = $state(true);
+  let sunsetLocation = $state('浦东新区 · 上海市 · 中国');
+  let sunsetSettings = $state<SunsetSettings | null>(null);
+  let sunsetBusy = $state(false);
+  let sunsetError = $state<string | null>(null);
+  let sunsetStatus = $state('');
+  let sunsetPreview = $state('');
 
   async function testNotification() {
     notificationBusy = true;
@@ -28,13 +37,81 @@
     error = '';
     status = '';
     try {
-      enabled = await ipc.getAutostart();
+      const [autostart, sunset] = await Promise.all([ipc.getAutostart(), ipc.getSunsetSettings()]);
+      enabled = autostart;
+      sunsetSettings = sunset;
+      sunsetEnabled = sunset.enabled;
+      sunsetLocation = sunset.location;
       ready = true;
     } catch (err) {
       ready = false;
       error = `读取失败：${String(err)}`;
     } finally {
       busy = false;
+    }
+  }
+
+  async function saveSunset() {
+    if (sunsetBusy) return;
+    sunsetBusy = true;
+    sunsetError = null;
+    sunsetStatus = '';
+    sunsetPreview = '';
+    try {
+      const current = sunsetSettings;
+      if (sunsetEnabled) {
+        const place = await geocodeLocation(sunsetLocation);
+        const input = {
+          enabled: true,
+          location: place.name,
+          latitude: place.latitude,
+          longitude: place.longitude,
+          timezone: place.timezone,
+        };
+        await ipc.setSunsetSettings(input);
+        sunsetSettings = { ...input, lastNotifiedDate: null };
+        sunsetLocation = place.name;
+        sunsetStatus = `已保存：${place.name}。每天本机 16:00 查询并提醒。`;
+      } else {
+        const input = {
+          enabled: false,
+          location: sunsetLocation.trim(),
+          latitude: current?.latitude ?? null,
+          longitude: current?.longitude ?? null,
+          timezone: current?.timezone ?? null,
+        };
+        await ipc.setSunsetSettings(input);
+        sunsetSettings = { ...input, lastNotifiedDate: current?.lastNotifiedDate ?? null };
+        sunsetStatus = '晚霞提醒已关闭。';
+      }
+    } catch (err) {
+      sunsetError = String(err);
+    } finally {
+      sunsetBusy = false;
+    }
+  }
+
+  async function previewSunset() {
+    if (sunsetBusy || !sunsetLocation.trim()) return;
+    sunsetBusy = true;
+    sunsetError = null;
+    sunsetStatus = '';
+    try {
+      const current = sunsetSettings;
+      const place = await geocodeLocation(sunsetLocation);
+      const forecast = await fetchSunsetForecast({
+        enabled: true,
+        location: place.name,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        timezone: place.timezone,
+        lastNotifiedDate: current?.lastNotifiedDate ?? null,
+      });
+      sunsetPreview = formatSunsetDetails(forecast);
+    } catch (err) {
+      sunsetError = String(err);
+    } finally {
+      sunsetBusy = false;
     }
   }
 
@@ -113,10 +190,44 @@
     {#if notificationError}<p class="error" role="alert">{notificationError}</p>{/if}
     <p class="status" role="status">{notificationStatus}</p>
   </div>
+  <div class="sunset">
+    <div class="setting">
+      <div class="copy">
+        <h2 id="sunset-label">晚霞提示</h2>
+        <p id="sunset-description">每天本机下午 4 点查询指定地点的日落和晚霞强度，并发送 Windows 通知。</p>
+      </div>
+      <button
+        class="switch"
+        class:on={sunsetEnabled}
+        role="switch"
+        aria-checked={sunsetEnabled}
+        aria-labelledby="sunset-label"
+        aria-describedby="sunset-description"
+        disabled={sunsetBusy}
+        onclick={() => (sunsetEnabled = !sunsetEnabled)}
+      ><span></span></button>
+    </div>
+    <label class="location">
+      查询地点
+      <input bind:value={sunsetLocation} maxlength="120" placeholder="例如：上海市浦东新区" />
+    </label>
+    <p class="hint">强度是基于日落前后云量、能见度和降水概率的预测估算，数据来自 Open-Meteo。</p>
+    <div class="actions">
+      <button class="retry" onclick={previewSunset} disabled={sunsetBusy || !sunsetLocation.trim()}>
+        {sunsetBusy ? '查询中…' : '查询今日预测'}
+      </button>
+      <button class="retry save" onclick={saveSunset} disabled={sunsetBusy || (sunsetEnabled && !sunsetLocation.trim())}>
+        {sunsetBusy ? '保存中…' : '保存设置'}
+      </button>
+    </div>
+    {#if sunsetPreview}<p class="preview" role="status">{sunsetPreview}</p>{/if}
+    {#if sunsetError}<p class="error" role="alert">{sunsetError}</p>{/if}
+    <p class="status" role="status">{sunsetStatus}</p>
+  </div>
 </section>
 
 <style>
-  .notifications { border-top: 1px solid var(--hairline); padding-top: 14px; margin-top: 14px; }
+  .notifications, .sunset { border-top: 1px solid var(--hairline); padding-top: 14px; margin-top: 14px; }
   .settings {
     flex: 1;
     min-height: 0;
@@ -193,5 +304,40 @@
     padding: 4px 8px;
     background: var(--surface-hover);
     font-size: 12px;
+  }
+
+  .sunset .location {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .location input {
+    min-height: 30px;
+    padding: 5px 8px;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 8px;
+    background: var(--surface-sunken);
+    user-select: text;
+  }
+
+  .actions {
+    display: flex;
+    gap: 7px;
+  }
+
+  .save {
+    color: var(--accent);
+  }
+
+  .preview {
+    margin-top: 10px;
+    padding: 7px 8px;
+    border-radius: 8px;
+    background: var(--surface-sunken);
+    color: var(--text-dim);
   }
 </style>
