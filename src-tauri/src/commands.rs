@@ -61,9 +61,7 @@ pub fn set_sunset_settings(store: State<'_, Store>, settings: SunsetSettingsInpu
         return Err(Error::Invalid("晚霞提醒需要先设置地点".into()));
     }
     if settings.enabled
-        && (settings.latitude.is_none()
-            || settings.longitude.is_none()
-            || timezone.is_none())
+        && (settings.latitude.is_none() || settings.longitude.is_none() || timezone.is_none())
     {
         return Err(Error::Invalid("晚霞地点缺少有效坐标或时区".into()));
     }
@@ -89,11 +87,7 @@ pub fn set_sunset_settings(store: State<'_, Store>, settings: SunsetSettingsInpu
             latitude: settings.latitude,
             longitude: settings.longitude,
             timezone: timezone.clone(),
-            last_notified_date: if changed {
-                None
-            } else {
-                previous_date
-            },
+            last_notified_date: if changed { None } else { previous_date },
         };
         Ok(())
     })
