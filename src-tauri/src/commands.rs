@@ -51,10 +51,7 @@ pub fn get_sunset_settings(store: State<'_, Store>) -> SunsetSettings {
 }
 
 #[tauri::command]
-pub fn set_sunset_settings(
-    store: State<'_, Store>,
-    settings: SunsetSettingsInput,
-) -> Result<()> {
+pub fn set_sunset_settings(store: State<'_, Store>, settings: SunsetSettingsInput) -> Result<()> {
     let location = clean(&settings.location, MAX_LOCATION_LEN);
     let timezone = settings
         .timezone
